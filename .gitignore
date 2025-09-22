@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+uploads/
+device_model.pth
+data/
