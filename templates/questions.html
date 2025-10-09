@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Questions - E-Waste Assistant{% endblock %}
+{% block content %}
+<div class="flex items-center justify-center min-h-[70vh]">
+  <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-xl text-center max-w-md w-full">
+    <h1 class="text-2xl font-bold text-green-700 dark:text-emerald-300 mb-4">Detected: {{ device_type }}</h1>
+    <form method="post" action="{{ url_for('recommendations') }}" class="space-y-5 text-left">
+      {% for q in questions %}
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300">{{ q }}</label>
+          <input name="q{{ loop.index0 }}" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-900">
+        </div>
+      {% endfor %}
+      <input type="hidden" name="device_type" value="{{ device_type }}">
+      <input type="submit" value="Submit" class="bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition w-full">
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+

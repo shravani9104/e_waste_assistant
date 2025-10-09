@@ -1,0 +1,9 @@
+/* Global tweaks */
+.card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.card:hover { transform: translateY(-6px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
+.hero-image { position: relative; }
+
+/* Dark mode helpers */
+.dark .footer { background: #0f172a; }
+
+
