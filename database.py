@@ -1,0 +1,346 @@
+import sqlite3
+import hashlib
+import os
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class Database:
+    def __init__(self, db_path='ewaste_assistant.db'):
+        self.db_path = db_path
+        self.init_database()
+    
+    def init_database(self):
+        """Initialize database with required tables"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Users table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                name TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP,
+                total_eco_score INTEGER DEFAULT 0,
+                devices_processed INTEGER DEFAULT 0
+            )
+        ''')
+        
+        # Device submissions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS device_submissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                device_type TEXT NOT NULL,
+                device_age INTEGER,
+                condition TEXT,
+                damage TEXT,
+                action_taken TEXT,
+                eco_score INTEGER,
+                environmental_impact TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
+        
+        # Feedback table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                comments TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'pending'
+            )
+        ''')
+        
+        # Recycling centers table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS recycling_centers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                contact TEXT,
+                address TEXT,
+                email TEXT,
+                website TEXT,
+                map_url TEXT,
+                description TEXT,
+                icon TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # User sessions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                session_token TEXT UNIQUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        
+        # Insert default recycling centers
+        self.insert_default_recycling_centers()
+    
+    def insert_default_recycling_centers(self):
+        """Insert default recycling centers"""
+        centers = [
+            {
+                'name': 'PERFECT E- WASTE RECYCLERS',
+                'contact': '091566 06777',
+                'address': 'Plot No. A, PERFECT E- WASTE RECYCLERS, 8/1, MIDC Industrial Area, Chilkalthana, Chhatrapati Sambhajinagar, Maharashtra 431006',
+                'map_url': 'https://share.google/CmjAHToqKRV10PtUR',
+                'description': 'Specialized e-waste recycling facility with professional disposal services.',
+                'icon': '🔋'
+            },
+            {
+                'name': 'Scrap Store',
+                'contact': '08554930666',
+                'address': 'Scrap Store: Organized Scrap Metal, Plastic, Paper, Electronics & Waste Recycling in Aurangabad, Shop No.3, Plot no. 87, Sethi Complex, opp. Mahadev Mandir, Rokda Hanuman Colony, Rokdiya, Chhatrapati Sambhajinagar, Maharashtra 431001',
+                'map_url': 'https://share.google/vGV19xKr0l2ylZvsq',
+                'description': 'Organized scrap metal, plastic, paper, and electronics recycling center.',
+                'icon': '🏪'
+            },
+            {
+                'name': 'Semtronics Customer Care',
+                'contact': '094222 22570',
+                'address': 'Besides Atithi Hotel, Jyotirmaya complex, 23, Jalna Rd, Town Center, M G M, Chhatrapati Sambhajinagar, Maharashtra 431009',
+                'map_url': 'https://share.google/hIDPijZmfuUBGm8mX',
+                'description': 'Electronics service and recycling center with customer care support.',
+                'icon': '📱'
+            },
+            {
+                'name': 'Marathwada Scrap Centre',
+                'contact': '098222 59601',
+                'address': 'Kailash Nagar, Mondha, Chhatrapati Sambhajinagar, Maharashtra 431001',
+                'map_url': 'https://share.google/7vUxpSD8yNxEIZxaa',
+                'description': 'Local scrap collection and recycling center serving the Marathwada region.',
+                'icon': '🏢'
+            }
+        ]
+        
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        for center in centers:
+            cursor.execute('''
+                INSERT OR IGNORE INTO recycling_centers 
+                (name, contact, address, email, website, map_url, description, icon)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                center['name'], center['contact'], center['address'],
+                center.get('email', ''), center.get('website', ''),
+                center['map_url'], center['description'], center['icon']
+            ))
+        
+        conn.commit()
+        conn.close()
+    
+    def create_user(self, email, password, name=None):
+        """Create a new user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        password_hash = generate_password_hash(password)
+        
+        try:
+            cursor.execute('''
+                INSERT INTO users (email, password_hash, name)
+                VALUES (?, ?, ?)
+            ''', (email, password_hash, name))
+            
+            user_id = cursor.lastrowid
+            conn.commit()
+            return user_id
+        except sqlite3.IntegrityError:
+            return None  # Email already exists
+        finally:
+            conn.close()
+    
+    def authenticate_user(self, email, password):
+        """Authenticate user login"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT id, password_hash, name, total_eco_score, devices_processed
+            FROM users WHERE email = ?
+        ''', (email,))
+        
+        user = cursor.fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user[1], password):
+            return {
+                'id': user[0],
+                'email': email,
+                'name': user[2],
+                'total_eco_score': user[3],
+                'devices_processed': user[4]
+            }
+        return None
+    
+    def update_user_login(self, user_id):
+        """Update last login timestamp"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
+        ''', (user_id,))
+        
+        conn.commit()
+        conn.close()
+    
+    def add_device_submission(self, user_id, device_type, device_age, condition, damage, action_taken, eco_score, environmental_impact):
+        """Add a new device submission"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO device_submissions 
+            (user_id, device_type, device_age, condition, damage, action_taken, eco_score, environmental_impact)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, device_type, device_age, condition, damage, action_taken, eco_score, environmental_impact))
+        
+        # Update user stats
+        cursor.execute('''
+            UPDATE users 
+            SET total_eco_score = total_eco_score + ?, 
+                devices_processed = devices_processed + 1
+            WHERE id = ?
+        ''', (eco_score, user_id))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_user_submissions(self, user_id):
+        """Get all submissions for a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT device_type, device_age, condition, damage, action_taken, 
+                   eco_score, environmental_impact, created_at
+            FROM device_submissions 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC
+        ''', (user_id,))
+        
+        submissions = cursor.fetchall()
+        conn.close()
+        
+        return [{
+            'device_type': sub[0],
+            'device_age': sub[1],
+            'condition': sub[2],
+            'damage': sub[3],
+            'action_taken': sub[4],
+            'eco_score': sub[5],
+            'environmental_impact': sub[6],
+            'created_at': sub[7]
+        } for sub in submissions]
+    
+    def get_user_stats(self, user_id):
+        """Get user statistics"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT total_eco_score, devices_processed
+            FROM users WHERE id = ?
+        ''', (user_id,))
+        
+        stats = cursor.fetchone()
+        conn.close()
+        
+        if stats:
+            return {
+                'total_eco_score': stats[0],
+                'devices_processed': stats[1]
+            }
+        return None
+    
+    def get_recycling_centers(self):
+        """Get all active recycling centers"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT name, contact, address, email, website, map_url, description, icon
+            FROM recycling_centers 
+            WHERE is_active = 1
+            ORDER BY name
+        ''')
+        
+        centers = cursor.fetchall()
+        conn.close()
+        
+        return [{
+            'name': center[0],
+            'contact': center[1],
+            'address': center[2],
+            'email': center[3],
+            'website': center[4],
+            'map_url': center[5],
+            'description': center[6],
+            'icon': center[7]
+        } for center in centers]
+    
+    def add_feedback(self, name, email, comments):
+        """Add user feedback"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO feedback (name, email, comments)
+            VALUES (?, ?, ?)
+        ''', (name, email, comments))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_all_feedback(self):
+        """Get all feedback for admin panel"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT id, name, email, comments, created_at, status
+            FROM feedback 
+            ORDER BY created_at DESC
+        ''')
+        
+        feedback = cursor.fetchall()
+        conn.close()
+        
+        return [{
+            'id': fb[0],
+            'name': fb[1],
+            'email': fb[2],
+            'comments': fb[3],
+            'created_at': fb[4],
+            'status': fb[5]
+        } for fb in feedback]
+    
+    def update_feedback_status(self, feedback_id, status):
+        """Update feedback status"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE feedback SET status = ? WHERE id = ?
+        ''', (status, feedback_id))
+        
+        conn.commit()
+        conn.close()

@@ -2,10 +2,40 @@
 {% block title %}Recommendation - E-Waste Assistant{% endblock %}
 {% block content %}
 <div class="flex items-center justify-center min-h-[70vh]">
-  <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-xl text-center max-w-md w-full">
+  <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-xl text-center max-w-4xl w-full">
     <h1 class="text-2xl font-bold text-green-700 dark:text-emerald-300 mb-4">Action: {{ action }}</h1>
-    <p class="text-gray-600 dark:text-gray-300 mb-4">Recommendations: {{ rec }}</p>
-    <a href="{{ url_for('home') }}" class="bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition">Back to Home</a>
+    <p class="text-gray-600 dark:text-gray-300 mb-6">Recommendations: {{ rec }}</p>
+    
+    {% if recycling_centers %}
+    <div class="mt-8">
+      <h2 class="text-xl font-bold text-green-700 dark:text-emerald-300 mb-6">Next Steps: Find a Recycling Center</h2>
+      <div class="grid gap-6 md:grid-cols-2">
+        {% for center in recycling_centers %}
+        <div class="bg-gray-50 dark:bg-slate-700 p-6 rounded-lg text-left">
+          <h3 class="text-lg font-semibold text-green-600 dark:text-emerald-400 mb-3">{{ center.name }}</h3>
+          <div class="space-y-2 text-sm">
+            <p class="flex items-center">
+              <span class="font-medium text-gray-700 dark:text-gray-300">📞 Contact:</span>
+              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ center.contact }}</span>
+            </p>
+            <p class="flex items-start">
+              <span class="font-medium text-gray-700 dark:text-gray-300">📍 Address:</span>
+              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ center.address }}</span>
+            </p>
+            <p class="flex items-center">
+              <span class="font-medium text-gray-700 dark:text-gray-300">🗺️ Map:</span>
+              <a href="{{ center.map }}" target="_blank" class="ml-2 text-blue-600 dark:text-blue-400 hover:underline">View on Map</a>
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    
+    <div class="mt-8">
+      <a href="{{ url_for('home') }}" class="bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition">Back to Home</a>
+    </div>
   </div>
 </div>
 {% endblock %}

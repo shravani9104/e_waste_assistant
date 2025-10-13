@@ -28,7 +28,12 @@
                         <a href="{{ url_for('signin') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Sign In</a>
                         <a href="{{ url_for('signup') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-md">Sign Up</a>
                     {% else %}
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Dashboard</a>
+                        <a href="{{ url_for('map_view') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Map</a>
                         <a href="{{ url_for('upload') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-md">Upload Device</a>
+                        {% if session.get('email') == 'admin@ewasteassistant.com' %}
+                            <a href="{{ url_for('admin_panel') }}" class="text-gray-700 hover:text-red-600 transition-colors font-medium">Admin</a>
+                        {% endif %}
                         <a href="{{ url_for('signout') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Sign Out</a>
                     {% endif %}
                 </div>
@@ -37,76 +42,379 @@
     </nav>
 
     <main class="flex-1">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="fixed top-20 right-4 z-50 space-y-2">
+                    {% for category, message in messages %}
+                        <div class="bg-white border-l-4 {% if category == 'error' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %} p-4 rounded-lg shadow-lg max-w-sm">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    {% if category == 'error' %}
+                                        <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    {% elif category == 'success' %}
+                                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium {% if category == 'error' %}text-red-800{% elif category == 'success' %}text-green-800{% else %}text-blue-800{% endif %}">
+                                        {{ message }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
         {% if page == 'home' %}
-        <section class="bg-gradient-to-r from-green-600 to-green-800 relative overflow-hidden">
-            <div class="absolute inset-0 bg-black opacity-20"></div>
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative">
-                <div class="text-center">
-                    <div class="flex justify-center mb-6">
-                        <div class="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                            <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                            </svg>
+        <!-- Hero Carousel Section -->
+        <section class="relative min-h-screen overflow-hidden">
+            <!-- Carousel Container -->
+            <div class="relative h-screen">
+                <!-- Slide 1: E-Waste Awareness -->
+                <div class="absolute inset-0 bg-gradient-to-br from-green-600 via-green-700 to-green-800 transition-opacity duration-1000 ease-in-out opacity-100" id="slide1">
+                    <div class="absolute inset-0 bg-black opacity-20"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-5"></div>
+                    <!-- Floating Elements -->
+                    <div class="absolute top-20 left-10 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
+                    <div class="absolute top-40 right-20 w-16 h-16 bg-green-300 bg-opacity-20 rounded-full animate-bounce"></div>
+                    <div class="absolute bottom-40 left-20 w-12 h-12 bg-white bg-opacity-15 rounded-full animate-ping"></div>
+                    <div class="absolute bottom-20 right-10 w-24 h-24 bg-green-200 bg-opacity-10 rounded-full animate-pulse"></div>
+                    
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center relative z-10">
+                        <div class="text-center w-full">
+                            <div class="flex justify-center mb-12 animate-fade-in-up">
+                                <div class="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white border-opacity-30 shadow-2xl animate-spin-slow">
+                                    <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight animate-fade-in-up animation-delay-200">
+                                <span class="block bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">E-Waste</span>
+                                <span class="block text-4xl md:text-5xl lg:text-6xl mt-2">Assistant</span>
+                            </h1>
+                            <p class="text-lg md:text-xl lg:text-2xl text-green-100 mb-12 max-w-4xl mx-auto leading-relaxed font-light animate-fade-in-up animation-delay-400">
+                                🌱 Transform Your E-Waste into Environmental Solutions with 
+                                <span class="font-semibold text-white">AI-Powered Recycling</span>
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center max-w-2xl mx-auto animate-fade-in-up animation-delay-600">
+                                {% if session.get('logged_in') %}
+                                    <a href="{{ url_for('upload') }}" class="group w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white text-green-600 font-semibold rounded-xl hover:bg-green-50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                                        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                        </svg>
+                                        Upload Your Device
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('signin') }}" class="group w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white text-green-600 font-semibold rounded-xl hover:bg-green-50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                                        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                        Get Started Today
+                                    </a>
+                                {% endif %}
+                                <a href="{{ url_for('about') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-green-500 bg-opacity-20 text-white font-semibold rounded-xl hover:bg-opacity-30 transition-all duration-300 border-2 border-green-300 backdrop-blur-sm">
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Learn More
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">E-Waste Assistant</h1>
-                    <p class="text-xl md:text-2xl text-green-100 mb-8 max-w-3xl mx-auto">🌱 Transform Your E-Waste into Environmental Solutions with AI-Powered Recycling</p>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        {% if session.get('logged_in') %}
-                            <a href="{{ url_for('upload') }}" class="inline-flex items-center px-8 py-4 bg-white text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors shadow-lg">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                </svg>
-                                Upload Your Device
-                            </a>
-                        {% else %}
-                            <a href="{{ url_for('signin') }}" class="inline-flex items-center px-8 py-4 bg-white text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors shadow-lg">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                Get Started Today
-                            </a>
-                        {% endif %}
-                        <a href="{{ url_for('about') }}" class="inline-flex items-center px-8 py-4 bg-green-500 bg-opacity-20 text-white font-semibold rounded-lg hover:bg-opacity-30 transition-colors border border-green-300">
-                            Learn More
-                        </a>
+                </div>
+                
+                <!-- Slide 2: Environmental Impact -->
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 transition-opacity duration-1000 ease-in-out opacity-0" id="slide2">
+                    <div class="absolute inset-0 bg-black opacity-20"></div>
+                    <!-- Floating Elements -->
+                    <div class="absolute top-32 left-16 w-24 h-24 bg-blue-300 bg-opacity-20 rounded-full animate-pulse"></div>
+                    <div class="absolute top-60 right-16 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-bounce"></div>
+                    <div class="absolute bottom-32 left-32 w-16 h-16 bg-blue-200 bg-opacity-15 rounded-full animate-ping"></div>
+                    
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center relative z-10">
+                        <div class="text-center w-full">
+                            <div class="flex justify-center mb-12">
+                                <div class="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white border-opacity-30 shadow-2xl">
+                                    <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+                                <span class="block">🌍 Save Our</span>
+                                <span class="block text-4xl md:text-5xl lg:text-6xl mt-2">Planet</span>
+                            </h1>
+                            <p class="text-lg md:text-xl lg:text-2xl text-blue-100 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
+                                Every device recycled prevents toxic waste from polluting our environment. 
+                                <span class="font-semibold text-white">Join the movement today!</span>
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center max-w-2xl mx-auto">
+                                <a href="{{ url_for('upload') }}" class="group w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                                    <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                    Start Recycling
+                                </a>
+                                <a href="{{ url_for('dashboard') if session.get('logged_in') else url_for('signin') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-blue-500 bg-opacity-20 text-white font-semibold rounded-xl hover:bg-opacity-30 transition-all duration-300 border-2 border-blue-300 backdrop-blur-sm">
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    View Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Slide 3: Technology & Innovation -->
+                <div class="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 transition-opacity duration-1000 ease-in-out opacity-0" id="slide3">
+                    <div class="absolute inset-0 bg-black opacity-20"></div>
+                    <!-- Floating Elements -->
+                    <div class="absolute top-24 left-20 w-28 h-28 bg-purple-300 bg-opacity-20 rounded-full animate-pulse"></div>
+                    <div class="absolute top-48 right-24 w-18 h-18 bg-white bg-opacity-10 rounded-full animate-bounce"></div>
+                    <div class="absolute bottom-36 left-24 w-20 h-20 bg-purple-200 bg-opacity-15 rounded-full animate-ping"></div>
+                    
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center relative z-10">
+                        <div class="text-center w-full">
+                            <div class="flex justify-center mb-12">
+                                <div class="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white border-opacity-30 shadow-2xl">
+                                    <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+                                <span class="block">🤖 AI-Powered</span>
+                                <span class="block text-4xl md:text-5xl lg:text-6xl mt-2">Solutions</span>
+                            </h1>
+                            <p class="text-lg md:text-xl lg:text-2xl text-purple-100 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
+                                Advanced machine learning algorithms analyze your devices and provide 
+                                <span class="font-semibold text-white">personalized recycling recommendations</span>
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center max-w-2xl mx-auto">
+                                <a href="{{ url_for('upload') }}" class="group w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white text-purple-600 font-semibold rounded-xl hover:bg-purple-50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                                    <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                    Try AI Analysis
+                                </a>
+                                <a href="{{ url_for('about') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-purple-500 bg-opacity-20 text-white font-semibold rounded-xl hover:bg-opacity-30 transition-all duration-300 border-2 border-purple-300 backdrop-blur-sm">
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Learn More
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carousel Navigation -->
+            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-20">
+                <button class="w-3 h-3 bg-white rounded-full opacity-100 transition-all duration-300" onclick="showSlide(1)"></button>
+                <button class="w-3 h-3 bg-white rounded-full opacity-50 transition-all duration-300" onclick="showSlide(2)"></button>
+                <button class="w-3 h-3 bg-white rounded-full opacity-50 transition-all duration-300" onclick="showSlide(3)"></button>
+            </div>
+            
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-8 right-8 animate-bounce">
+                <div class="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+                    <div class="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+                </div>
+            </div>
+        </section>
+        <section class="py-24 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
+            <!-- Background decorative elements -->
+            <div class="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-20 animate-pulse"></div>
+            <div class="absolute top-40 right-20 w-24 h-24 bg-blue-100 rounded-full opacity-20 animate-bounce"></div>
+            <div class="absolute bottom-20 left-20 w-28 h-28 bg-purple-100 rounded-full opacity-20 animate-ping"></div>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center mb-20 scroll-animate">
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">♻️ Explore E-Waste Management</h2>
+                    <p class="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">Understanding the impact and solutions for electronic waste management</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div class="group bg-white p-10 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 scroll-animate hover-lift">
+                        <div class="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg animate-pulse-glow">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">What is E-Waste?</h3>
+                        <p class="text-gray-600 text-center leading-relaxed text-lg">E-waste includes discarded devices like phones, laptops, batteries, and chargers. It contains hazardous materials like lead and mercury, posing risks if not handled properly.</p>
+                    </div>
+                    <div class="group bg-white p-10 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 scroll-animate hover-lift">
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg animate-pulse-glow">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">Why It Matters</h3>
+                        <p class="text-gray-600 text-center leading-relaxed text-lg">Improper disposal pollutes soil and water, contributing to 70% of global toxic waste. Recycling reduces harm and recovers valuable resources.</p>
+                    </div>
+                    <div class="group bg-white p-10 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 scroll-animate hover-lift">
+                        <div class="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg animate-pulse-glow">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">How We Help</h3>
+                        <p class="text-gray-600 text-center leading-relaxed text-lg">Our AI detects device types and offers tailored recommendations—reuse, recycle, or safe disposal—for a greener India.</p>
                     </div>
                 </div>
             </div>
         </section>
-        <section class="py-20 bg-white">
+        
+        <!-- Educational Content Section -->
+        <section class="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-green-800 mb-4">♻️ Explore E-Waste Management</h2>
-                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">Understanding the impact and solutions for electronic waste management</p>
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">📚 Learn About E-Waste</h2>
+                    <p class="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto">Educational content to help you make informed decisions</p>
                 </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Quick Facts -->
+                    <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">🔍 Quick Facts</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-4 mt-1">
+                                    <span class="text-green-600 font-bold">1</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Global E-Waste Crisis</h4>
+                                    <p class="text-gray-600">53.6 million metric tons of e-waste generated worldwide in 2019</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-4 mt-1">
+                                    <span class="text-blue-600 font-bold">2</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Toxic Materials</h4>
+                                    <p class="text-gray-600">E-waste contains lead, mercury, cadmium, and other hazardous substances</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-4 mt-1">
+                                    <span class="text-purple-600 font-bold">3</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Resource Recovery</h4>
+                                    <p class="text-gray-600">Recycling can recover 95% of materials from electronic devices</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Community Stats -->
+                    <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-6">🌟 Community Impact</h3>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl font-bold text-white">1.2K</span>
+                                </div>
+                                <h4 class="font-bold text-gray-900">Devices Recycled</h4>
+                                <p class="text-sm text-gray-600">This month</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl font-bold text-white">850</span>
+                                </div>
+                                <h4 class="font-bold text-gray-900">Active Users</h4>
+                                <p class="text-sm text-gray-600">Making a difference</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl font-bold text-white">15K</span>
+                                </div>
+                                <h4 class="font-bold text-gray-900">Eco Points</h4>
+                                <p class="text-sm text-gray-600">Earned by community</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl font-bold text-white">4</span>
+                                </div>
+                                <h4 class="font-bold text-gray-900">Recycling Centers</h4>
+                                <p class="text-sm text-gray-600">Partnered with us</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Testimonials Section -->
+        <section class="py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">💬 What Our Users Say</h2>
+                    <p class="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto">Real stories from our eco-conscious community</p>
+                </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="bg-green-50 p-8 rounded-xl shadow-lg border-2 border-green-200 hover:shadow-xl transition-shadow hover:border-green-300">
-                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-3xl shadow-xl border border-green-200">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                                <span class="text-white font-bold text-lg">A</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900">Amit Kumar</h4>
+                                <p class="text-gray-600">Mumbai, India</p>
+                            </div>
                         </div>
-                        <h3 class="text-2xl font-semibold text-green-800 mb-4 text-center">What is E-Waste?</h3>
-                        <p class="text-gray-700 text-center">E-waste includes discarded devices like phones, laptops, batteries, and chargers. It contains hazardous materials like lead and mercury, posing risks if not handled properly.</p>
+                        <p class="text-gray-700 leading-relaxed">"This platform made it so easy to find the right recycling center for my old laptop. The eco-score system motivates me to recycle more!"</p>
+                        <div class="flex text-yellow-400 mt-4">
+                            ⭐⭐⭐⭐⭐
+                        </div>
                     </div>
-                    <div class="bg-green-50 p-8 rounded-xl shadow-lg border-2 border-green-200 hover:shadow-xl transition-shadow hover:border-green-300">
-                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
+                    
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-8 rounded-3xl shadow-xl border border-blue-200">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-4">
+                                <span class="text-white font-bold text-lg">P</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900">Priya Sharma</h4>
+                                <p class="text-gray-600">Delhi, India</p>
+                            </div>
                         </div>
-                        <h3 class="text-2xl font-semibold text-green-800 mb-4 text-center">Why It Matters</h3>
-                        <p class="text-gray-700 text-center">Improper disposal pollutes soil and water, contributing to 70% of global toxic waste. Recycling reduces harm and recovers valuable resources.</p>
+                        <p class="text-gray-700 leading-relaxed">"The educational tips helped me understand the environmental impact of my actions. Now I'm more conscious about e-waste disposal."</p>
+                        <div class="flex text-yellow-400 mt-4">
+                            ⭐⭐⭐⭐⭐
+                        </div>
                     </div>
-                    <div class="bg-green-50 p-8 rounded-xl shadow-lg border-2 border-green-200 hover:shadow-xl transition-shadow hover:border-green-300">
-                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 mx-auto">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
+                    
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-3xl shadow-xl border border-purple-200">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mr-4">
+                                <span class="text-white font-bold text-lg">R</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900">Rajesh Patel</h4>
+                                <p class="text-gray-600">Ahmedabad, India</p>
+                            </div>
                         </div>
-                        <h3 class="text-2xl font-semibold text-green-800 mb-4 text-center">How We Help</h3>
-                        <p class="text-gray-700 text-center">Our AI detects device types and offers tailored recommendations—reuse, recycle, or safe disposal—for a greener India.</p>
+                        <p class="text-gray-700 leading-relaxed">"The dashboard feature is amazing! I can track my eco-score and see how much I'm contributing to environmental protection."</p>
+                        <div class="flex text-yellow-400 mt-4">
+                            ⭐⭐⭐⭐⭐
+                        </div>
                     </div>
                 </div>
             </div>
@@ -225,6 +533,10 @@
                 <h1 class="text-3xl font-bold text-emerald-700 mb-6 text-center">Sign Up</h1>
                 <form method="post" class="space-y-5">
                     <div>
+                        <label class="block text-gray-700">Full Name</label>
+                        <input type="text" name="name" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" required>
+                    </div>
+                    <div>
                         <label class="block text-gray-700">Email</label>
                         <input type="email" name="email" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" required>
                     </div>
@@ -237,17 +549,17 @@
             </div>
         </div>
         {% elif page == 'upload' %}
-        <div class="py-20 bg-green-50">
-            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="bg-white rounded-xl shadow-lg p-8 border-2 border-green-200">
-                    <div class="text-center mb-8">
-                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="py-24 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl shadow-2xl p-12 border border-gray-100">
+                    <div class="text-center mb-12">
+                        <div class="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                             </svg>
                         </div>
-                        <h1 class="text-3xl font-bold text-green-800 mb-4">📱 Upload Your E-Waste Device</h1>
-                        <p class="text-lg text-gray-600">Provide details and upload an image. Choose device type, or pick Other and specify.</p>
+                        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">📱 Upload Your E-Waste Device</h1>
+                        <p class="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">Provide details and upload an image. Choose device type, or pick Other and specify.</p>
                     </div>
                     <form id="uploadForm" method="post" enctype="multipart/form-data" class="space-y-6">
                         <div>
@@ -287,17 +599,17 @@
             </div>
         </div>
         {% elif page == 'questions' %}
-        <div class="py-20 bg-green-50">
-            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="bg-white rounded-xl shadow-lg p-8 border-2 border-green-200">
-                    <div class="text-center mb-8">
-                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="py-24 bg-gradient-to-br from-blue-50 via-green-50 to-emerald-50 min-h-screen">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl shadow-2xl p-12 border border-gray-100">
+                    <div class="text-center mb-12">
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-3xl font-bold text-green-800 mb-2">📱 Device: {{ device_type }}</h1>
-                        <p class="text-lg text-gray-600">Please answer the following questions for better analysis</p>
+                        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">📱 Device: {{ device_type }}</h1>
+                        <p class="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">Please answer the following questions for better analysis</p>
                     </div>
                     <form method="post" action="{{ url_for('recommendations') }}" class="space-y-6">
                         {% for q in questions %}
@@ -315,20 +627,466 @@
             </div>
         </div>
         {% elif page == 'recommendations' %}
-        <div class="py-20 bg-green-50">
-            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="bg-white rounded-xl shadow-lg p-8 text-center border-2 border-green-200">
-                    <div class="mb-8">
-                        <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="py-24 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl shadow-2xl p-12 text-center border border-gray-100">
+                    <div class="mb-12">
+                        <div class="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
-                        <h1 class="text-3xl font-bold text-green-800 mb-4">♻️ Action: {{ action }}</h1>
-                        <p class="text-lg text-gray-700 bg-green-50 p-4 rounded-lg border border-green-200">Recommendations: {{ rec }}</p>
+                        <h1 class="text-4xl font-bold text-green-800 mb-6">♻️ Action: {{ action }}</h1>
+                        
+                        <!-- Eco Score Display -->
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border-2 border-green-200 shadow-lg mb-8">
+                            <div class="flex items-center justify-center mb-4">
+                                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                                    <span class="text-2xl font-bold text-white">{{ eco_score }}</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-green-800">Eco Score</h3>
+                                    <p class="text-green-600">Points earned for this action!</p>
+                                </div>
+                            </div>
+                            <p class="text-lg text-gray-700 font-medium text-center">Recommendations: {{ rec }}</p>
+                        </div>
+                        
+                        <!-- Environmental Impact -->
+                        <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-2xl border-2 border-blue-200 shadow-lg mb-8">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-bold text-blue-800">Environmental Impact</h3>
+                            </div>
+                            <p class="text-gray-700 text-lg leading-relaxed">{{ environmental_impact }}</p>
+                        </div>
+                        
+                        <!-- Educational Tips -->
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border-2 border-purple-200 shadow-lg">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-bold text-purple-800">💡 Tips for {{ device_type }}</h3>
+                            </div>
+                            <ul class="space-y-2">
+                                {% for tip in educational_tips %}
+                                <li class="flex items-start">
+                                    <span class="text-purple-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700">{{ tip }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
-                    <a href="{{ url_for('home') }}" class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors shadow-lg">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    
+                    {% if recycling_centers %}
+                    <div class="mt-16">
+                        <div class="text-center mb-12">
+                            <h2 class="text-3xl md:text-4xl font-bold text-green-800 mb-4">🌱 Next Steps: Find a Recycling Center</h2>
+                            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">Choose from our verified recycling partners in your area</p>
+                        </div>
+                        
+                        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                            {% for center in recycling_centers %}
+                            <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                <div class="flex items-start mb-6">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 text-2xl shadow-lg">
+                                        {{ center.icon }}
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ center.name }}</h3>
+                                        {% if center.description %}
+                                        <p class="text-sm text-gray-600 leading-relaxed">{{ center.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div class="flex items-start">
+                                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+                                            <span class="text-green-600 text-sm">📞</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <span class="font-semibold text-gray-800 text-sm">Contact</span>
+                                            <p class="text-gray-700 text-sm mt-1">{{ center.contact }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+                                            <span class="text-green-600 text-sm">📍</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <span class="font-semibold text-gray-800 text-sm">Address</span>
+                                            <p class="text-gray-700 text-sm mt-1 leading-relaxed">{{ center.address }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if center.email %}
+                                    <div class="flex items-start">
+                                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+                                            <span class="text-green-600 text-sm">📧</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <span class="font-semibold text-gray-800 text-sm">Email</span>
+                                            <a href="mailto:{{ center.email }}" class="text-blue-600 hover:underline text-sm mt-1 block">{{ center.email }}</a>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if center.website %}
+                                    <div class="flex items-start">
+                                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+                                            <span class="text-green-600 text-sm">🌐</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <span class="font-semibold text-gray-800 text-sm">Website</span>
+                                            <a href="{{ center.website }}" target="_blank" class="text-blue-600 hover:underline text-sm mt-1 block break-all">{{ center.website }}</a>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="pt-6 mt-6 border-t border-gray-200">
+                                    <a href="{{ center.map }}" target="_blank" class="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        View on Map
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-xl font-bold text-blue-800">💡 Pro Tip</h3>
+                            </div>
+                            <p class="text-blue-700 text-lg leading-relaxed">Call ahead to confirm operating hours and accepted items. Some centers may offer pickup services for larger quantities!</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="{{ url_for('dashboard') }}" class="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                            <svg class="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            View Dashboard
+                        </a>
+                        <a href="{{ url_for('home') }}" class="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                            <svg class="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        Back to Home
+                    </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif page == 'dashboard' %}
+        <div class="py-24 bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">📊 Your Eco Dashboard</h1>
+                    <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">Track your environmental impact and recycling journey</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <span class="text-2xl font-bold text-white">{{ total_eco_score }}</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Total Eco Score</h3>
+                        <p class="text-gray-600">Points earned from recycling</p>
+                    </div>
+                    
+                    <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <span class="text-2xl font-bold text-white">{{ total_devices }}</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Devices Processed</h3>
+                        <p class="text-gray-600">Total devices recycled</p>
+                    </div>
+                    
+                    <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Eco Champion</h3>
+                        <p class="text-gray-600">Making a difference!</p>
+                    </div>
+                </div>
+                
+                <!-- Device History -->
+                {% if user_data %}
+                <div class="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📱 Your Recycling History</h2>
+                    <div class="grid gap-6">
+                        {% for item in user_data %}
+                        <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-2xl border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mr-4">
+                                        <span class="text-white font-bold">{{ item.eco_score }}</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-900">{{ item.device_type }}</h3>
+                                        <p class="text-gray-600">{{ item.action }} • {{ item.date }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-2xl font-bold text-green-600">+{{ item.eco_score }}</span>
+                                    <p class="text-sm text-gray-500">eco points</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-3xl shadow-xl p-12 border border-gray-100 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">No Recycling History Yet</h3>
+                    <p class="text-gray-600 mb-8">Start your eco-friendly journey by uploading your first device!</p>
+                    <a href="{{ url_for('upload') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Upload Your First Device
+                    </a>
+                </div>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div class="text-center mt-12">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="{{ url_for('upload') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            Upload Another Device
+                        </a>
+                        <a href="{{ url_for('home') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-2xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif page == 'map' %}
+        <div class="py-24 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">🗺️ Recycling Centers Map</h1>
+                    <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">Find nearby recycling centers and get directions</p>
+                </div>
+                
+                <!-- Map Container -->
+                <div class="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 mb-8">
+                    <div id="map" class="w-full h-96 rounded-2xl bg-gray-100 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Interactive Map</h3>
+                            <p class="text-gray-600">Map integration would show recycling centers here</p>
+                            <p class="text-sm text-gray-500 mt-2">Powered by Google Maps API</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recycling Centers List -->
+                <div class="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📍 Available Recycling Centers</h2>
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mr-4 text-2xl">
+                                    🔋
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">PERFECT E- WASTE RECYCLERS</h3>
+                                    <p class="text-sm text-gray-600">Specialized e-waste facility</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm mb-4">091566 06777</p>
+                            <a href="https://share.google/CmjAHToqKRV10PtUR" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Get Directions
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border border-blue-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4 text-2xl">
+                                    🏪
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">Scrap Store</h3>
+                                    <p class="text-sm text-gray-600">Organized scrap recycling</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm mb-4">08554930666</p>
+                            <a href="https://share.google/vGV19xKr0l2ylZvsq" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Get Directions
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mr-4 text-2xl">
+                                    📱
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">Semtronics Customer Care</h3>
+                                    <p class="text-sm text-gray-600">Electronics service center</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm mb-4">094222 22570</p>
+                            <a href="https://share.google/hIDPijZmfuUBGm8mX" target="_blank" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Get Directions
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-2xl border border-orange-200">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mr-4 text-2xl">
+                                    🏢
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">Marathwada Scrap Centre</h3>
+                                    <p class="text-sm text-gray-600">Local scrap collection</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm mb-4">098222 59601</p>
+                            <a href="https://share.google/7vUxpSD8yNxEIZxaa" target="_blank" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Get Directions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="text-center mt-12">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-2xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            Back to Dashboard
+                        </a>
+                        <a href="{{ url_for('home') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif page == 'admin' %}
+        <div class="py-24 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">🔧 Admin Panel</h1>
+                    <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">Manage user feedback and system settings</p>
+                </div>
+                
+                <!-- Feedback Management -->
+                <div class="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8">📝 User Feedback</h2>
+                    
+                    {% if feedbacks %}
+                    <div class="space-y-6">
+                        {% for feedback in feedbacks %}
+                        <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-2xl border border-gray-200">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">{{ feedback.name }}</h3>
+                                    <p class="text-gray-600">{{ feedback.email }}</p>
+                                    <p class="text-sm text-gray-500">{{ feedback.created_at }}</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-3 py-1 rounded-full text-sm font-medium {% if feedback.status == 'pending' %}bg-yellow-100 text-yellow-800{% elif feedback.status == 'resolved' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ feedback.status.title() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 mb-4 leading-relaxed">{{ feedback.comments }}</p>
+                            <div class="flex space-x-2">
+                                <a href="{{ url_for('update_feedback_status', feedback_id=feedback.id, status='resolved') }}" 
+                                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                    Mark Resolved
+                                </a>
+                                <a href="{{ url_for('update_feedback_status', feedback_id=feedback.id, status='pending') }}" 
+                                   class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm">
+                                    Mark Pending
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-12">
+                        <div class="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">No Feedback Yet</h3>
+                        <p class="text-gray-600">User feedback will appear here when submitted.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="text-center mt-12">
+                    <a href="{{ url_for('home') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-2xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 shadow-xl hover:shadow-2xl">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                         Back to Home
@@ -357,6 +1115,177 @@
     </footer>
 
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    
+    <!-- Custom Animations and Carousel Script -->
+    <script>
+        // Carousel functionality
+        let currentSlide = 1;
+        const totalSlides = 3;
+        
+        function showSlide(slideNumber) {
+            // Hide all slides
+            for (let i = 1; i <= totalSlides; i++) {
+                const slide = document.getElementById(`slide${i}`);
+                const button = document.querySelector(`button[onclick="showSlide(${i})"]`);
+                
+                if (slide && button) {
+                    slide.style.opacity = '0';
+                    button.style.opacity = '0.5';
+                }
+            }
+            
+            // Show selected slide
+            const selectedSlide = document.getElementById(`slide${slideNumber}`);
+            const selectedButton = document.querySelector(`button[onclick="showSlide(${slideNumber})"]`);
+            
+            if (selectedSlide && selectedButton) {
+                selectedSlide.style.opacity = '1';
+                selectedButton.style.opacity = '1';
+                currentSlide = slideNumber;
+            }
+        }
+        
+        // Auto-advance carousel
+        function autoAdvance() {
+            currentSlide = currentSlide >= totalSlides ? 1 : currentSlide + 1;
+            showSlide(currentSlide);
+        }
+        
+        // Start auto-advance
+        setInterval(autoAdvance, 5000);
+        
+        // Add custom animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            @keyframes spinSlow {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            
+            .animate-fade-in-up {
+                animation: fadeInUp 0.8s ease-out forwards;
+            }
+            
+            .animate-spin-slow {
+                animation: spinSlow 20s linear infinite;
+            }
+            
+            .animation-delay-200 {
+                animation-delay: 0.2s;
+                opacity: 0;
+            }
+            
+            .animation-delay-400 {
+                animation-delay: 0.4s;
+                opacity: 0;
+            }
+            
+            .animation-delay-600 {
+                animation-delay: 0.6s;
+                opacity: 0;
+            }
+            
+            /* Smooth transitions for carousel */
+            .carousel-slide {
+                transition: opacity 1s ease-in-out;
+            }
+            
+            /* Enhanced hover effects */
+            .hover-lift:hover {
+                transform: translateY(-5px);
+                transition: transform 0.3s ease;
+            }
+            
+            /* Floating animation for decorative elements */
+            @keyframes float {
+                0%, 100% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-20px);
+                }
+            }
+            
+            .animate-float {
+                animation: float 6s ease-in-out infinite;
+            }
+            
+            /* Pulse animation for buttons */
+            @keyframes pulse-glow {
+                0%, 100% {
+                    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+                }
+                50% {
+                    box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+                }
+            }
+            
+            .animate-pulse-glow {
+                animation: pulse-glow 2s ease-in-out infinite;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Add intersection observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fade-in-up');
+                }
+            });
+        }, observerOptions);
+        
+        // Observe elements for scroll animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const animateElements = document.querySelectorAll('.scroll-animate');
+            animateElements.forEach(el => observer.observe(el));
+        });
+        
+        // Add smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Add parallax effect to floating elements
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = document.querySelectorAll('.parallax');
+            
+            parallaxElements.forEach(element => {
+                const speed = element.dataset.speed || 0.5;
+                element.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
+    </script>
 </body>
 </html>
 
