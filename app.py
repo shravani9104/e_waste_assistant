@@ -5,10 +5,12 @@ from database import Database
 from werkzeug.utils import secure_filename
 import os
 from functools import wraps
-
+from chatbot import get_chatbot_response, get_quick_reply_suggestions
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', '20f8fbd893abb98ecbe656fc7cf31bb0c049d3b5716480f7481eaa052d269bb0')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize database
@@ -205,6 +207,40 @@ def api_recycling_centers():
 def map_view():
     """Map view for recycling centers"""
     return render_template('index.html', page='map')
+
+@app.route('/chatbot')
+def chatbot_page():
+    """Render the chatbot page"""
+    return render_template('chatbot_page.html')
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """API endpoint for chatbot"""
+    data = request.get_json()
+    user_message = data.get('message', '')
+    conversation_history = data.get('history', [])
+    
+    if not user_message.strip():
+        return jsonify({'error': 'Message cannot be empty'}), 400
+    
+    # Get response from chatbot
+    bot_response = get_chatbot_response(user_message, conversation_history)
+    
+    # Get quick reply suggestions
+    suggestions = get_quick_reply_suggestions(user_message)
+    
+    return jsonify({
+        'response': bot_response,
+        'suggestions': suggestions
+    })
+
+@app.route('/api/chat/clear', methods=['POST'])
+def clear_chat():
+    """Clear chat history"""
+    if 'chat_history' in session:
+        session.pop('chat_history')
+    return jsonify({'success': True, 'message': 'Chat history cleared'})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
