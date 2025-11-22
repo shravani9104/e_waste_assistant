@@ -13,7 +13,7 @@ SYSTEM_PROMPT = """You are an AI assistant for an E-Waste Management platform. Y
 
 1. Questions about electronic waste disposal and recycling
 2. Information about device reuse, refurbishment, and donation
-3. Environmental impact of electronic devices
+3. Environmental impact of electronic devices cx
 4. Best practices for e-waste management
 5. How to use the platform features
 
