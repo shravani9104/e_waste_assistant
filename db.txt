@@ -101,37 +101,7 @@ class Database:
         except sqlite3.Error as e:
             logger.error(f"Database initialization error: {e}")
     
-    def migrate_schema(self, conn):
-        """
-        Migrate database schema: clean duplicates and add unique constraint on address
-        """
-        try:
-            cursor = conn.cursor()
-
-            # Clean duplicates: keep first entry by id for each address
-            cursor.execute('''
-                DELETE FROM recycling_centers
-                WHERE id NOT IN (
-                    SELECT MIN(id) FROM recycling_centers GROUP BY address
-                )
-            ''')
-
-            # Check if unique index on address exists, create if not
-            cursor.execute('''
-                PRAGMA index_list('recycling_centers')
-            ''')
-            indexes = cursor.fetchall()
-            if not any('unique_address' in index for index in [idx[1] for idx in indexes]):
-                cursor.execute('''
-                    CREATE UNIQUE INDEX unique_address ON recycling_centers(address)
-                ''')
-
-            conn.commit()
-        except sqlite3.Error as e:
-            logger.error(f"Migration error: {e}")
-            conn.rollback()
-
-    
+        
     def insert_default_recycling_centers(self):
         """Insert default recycling centers"""
         centers = [
@@ -173,25 +143,16 @@ class Database:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            def normalize_address(addr):
-                return addr.strip().lower()
-
             for center in centers:
-                normalized_address = normalize_address(center['address'])
-                # Use insert or ignore with normalized address check
                 cursor.execute('''
-                    SELECT 1 FROM recycling_centers WHERE LOWER(TRIM(address)) = ?
-                ''', (normalized_address,))
-                if cursor.fetchone() is None:
-                    cursor.execute('''
-                        INSERT INTO recycling_centers 
-                        (name, contact, address, email, website, map_url, description, icon)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        center['name'], center['contact'], center['address'],
-                        center.get('email', ''), center.get('website', ''),
-                        center['map_url'], center['description'], center['icon']
-                    ))
+                    INSERT OR IGNORE INTO recycling_centers 
+                    (name, contact, address, email, website, map_url, description, icon)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    center['name'], center['contact'], center['address'],
+                    center.get('email', ''), center.get('website', ''),
+                    center['map_url'], center['description'], center['icon']
+                ))
 
             conn.commit()
             conn.close()
@@ -461,4 +422,3 @@ class Database:
             logger.error(f"Update feedback status error: {e}")
         finally:
             if conn:
-                conn.close()

@@ -86,3 +86,47 @@ def classify_by_filename(image_path):
 
 if __name__ == '__main__':
     train_model()
+
+def estimate_recycling_price(device_type, age, condition, damage, user_address):
+    """
+    Estimate recycling price using the fine-tuned Gemini model.
+    Parameters:
+        device_type (str): Type of device (mobile, laptop, battery, etc.)
+        age (int): Age of the device in years
+        condition (str): Condition of the device ('working', 'partial', 'broken')
+        damage (str): Damage status ('yes', 'no')
+        user_address (str): User's address or location info
+    Returns:
+        float: Estimated recycling price in currency units
+    """
+    # TODO: Integrate Gemini fine-tuned model inference here.
+    # Placeholder implementation using simple heuristic for demonstration.
+    base_price = {
+        'mobile': 1000,
+        'laptop': 2000,
+        'battery': 500,
+        'player': 800,
+        'keyboard': 400,
+        'television': 2500
+    }.get(device_type.lower(), 500)
+
+    condition_factor = {
+        'working': 1.0,
+        'partial': 0.6,
+        'broken': 0.3
+    }.get(condition.lower(), 0.5)
+
+    damage_factor = 0.8 if damage.lower() == 'yes' else 1.0
+
+    age_factor = max(0.1, 1 - (age * 0.1))  # Decrease 10% per year
+
+    # Location multiplier - simple placeholder: urban areas might pay more
+    location_factor = 1.0
+    if user_address:
+        if any(city in user_address.lower() for city in ['city', 'metro', 'urban']):
+            location_factor = 1.1
+        else:
+            location_factor = 0.9
+
+    estimated_price = base_price * condition_factor * damage_factor * age_factor * location_factor
+    return round(estimated_price, 2)

@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, render_template_string, session, redirect, url_for, flash, jsonify
 from decision_engine import decide_action, get_questions, get_recommendations, get_eco_score, get_environmental_impact, get_educational_tips
-from model import detect_device
+from model import detect_device, estimate_recycling_price
 from database import Database
 from werkzeug.utils import secure_filename
 import os
@@ -15,6 +15,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize database
 db = Database()
+
 
 def login_required(f):
     @wraps(f)
@@ -116,16 +117,21 @@ def upload():
                 file.save(path)
                 device_type = detect_device(path)
                 questions = get_questions(device_type)
-                return render_template('index.html', page='questions', questions=questions, device_type=device_type)
+                # Add user_address field to questions page as empty initially
+                return render_template('index.html', page='questions', questions=questions, device_type=device_type, user_address='')
         # Fallback to manual if no photo
         device_type = request.form.get('device_type') or ''
         custom_device_type = request.form.get('custom_device_type') or ''
         final_device_type = custom_device_type.strip() if device_type == 'Other' and custom_device_type.strip() else device_type
         questions = get_questions(final_device_type)
-        return render_template('index.html', page='questions', questions=questions, device_type=final_device_type)
+        return render_template('index.html', page='questions', questions=questions, device_type=final_device_type, user_address='')
     return render_template('index.html', page='upload')
 
-@app.route('/recommendations', methods=['POST'])
+import logging
+
+logger = logging.getLogger(__name__)
+
+@ app.route('/recommendations', methods=['POST'])
 @login_required
 def recommendations():
     device_type = request.form['device_type']
@@ -135,22 +141,46 @@ def recommendations():
         age = 0  # Default or error handle
     condition = request.form['q1']
     damage = request.form['q2']
+
+    # New: get user_address from form input
+    user_address = request.form.get('user_address', '').strip()
+
     action = decide_action(device_type, age, condition, damage)
     rec = get_recommendations(action)
     eco_score = get_eco_score(action, device_type, age, condition)
     environmental_impact = get_environmental_impact(device_type, action)
     educational_tips = get_educational_tips(device_type)
-    recycling_centers = db.get_recycling_centers() if action == 'Safe Disposal' else []
-    
-    # Store submission in database
-    user_id = session['user_id']
+
+    # Filter recycling centers nearest to user address if address provided
+    recycling_centers_all = db.get_recycling_centers() if action == 'Safe Disposal' else []
+    recycling_centers = []
+    if user_address and recycling_centers_all:
+        addr_lower = user_address.lower()
+        for center in recycling_centers_all:
+            if any(city in center['address'].lower() for city in addr_lower.split()):
+                recycling_centers.append(center)
+        # If no match, fallback to all
+        if not recycling_centers:
+            recycling_centers = recycling_centers_all
+    else:
+        recycling_centers = recycling_centers_all
+
+    estimated_price = estimate_recycling_price(device_type, age, condition, damage, user_address)
+
+    # Store submission in database, including estimated_price and user_address
+    user_id = session.get('user_id')
+    logger.info(f"User ID from session (recommendations): {user_id}")
+
     db.add_device_submission(
         user_id, device_type, age, condition, damage, 
-        action, eco_score, environmental_impact
+        action, eco_score, environmental_impact,
+        estimated_price=estimated_price,
+        user_address=user_address
     )
-    
+    logger.info(f"Added device submission for user {user_id} with eco_score {eco_score}")
+
     flash(f'Great! You earned {eco_score} eco points for {action.lower()} your {device_type.lower()}!', 'success')
-    
+
     return render_template('index.html', 
                          page='recommendations', 
                          action=action, 
@@ -159,22 +189,34 @@ def recommendations():
                          eco_score=eco_score,
                          environmental_impact=environmental_impact,
                          educational_tips=educational_tips,
-                         device_type=device_type)
+                         device_type=device_type,
+                         estimated_price=estimated_price
+                        )
 
-@app.route('/dashboard')
+
+@ app.route('/dashboard')
 @login_required
 def dashboard():
-    user_id = session['user_id']
+    user_id = session.get('user_id')
+    logger.info(f"User ID from session (dashboard): {user_id}")
+
     user_submissions = db.get_user_submissions(user_id)
+    logger.info(f"User submissions count for user {user_id}: {len(user_submissions) if user_submissions else 'None'}")
+
     user_stats = db.get_user_stats(user_id)
-    
+    logger.info(f"User stats retrieved for user {user_id}: {user_stats}")
+
+    # Provide default stats if None to prevent exceptions leading to error page
+    if user_stats is None:
+        user_stats = {'total_eco_score': 0, 'devices_processed': 0}
+
     # Calculate statistics
     device_counts = {}
     action_counts = {}
     for submission in user_submissions:
         device_counts[submission['device_type']] = device_counts.get(submission['device_type'], 0) + 1
         action_counts[submission['action_taken']] = action_counts.get(submission['action_taken'], 0) + 1
-    
+
     return render_template('index.html', 
                          page='dashboard',
                          user_data=user_submissions,
@@ -240,7 +282,6 @@ def clear_chat():
     if 'chat_history' in session:
         session.pop('chat_history')
     return jsonify({'success': True, 'message': 'Chat history cleared'})
-
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,5 +1,10 @@
 import google.generativeai as genai
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(filename='chatbot.log', level=logging.ERROR, 
+                    format='%(asctime)s %(levelname)s:%(message)s')
 
 # Configure Gemini API
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
@@ -13,7 +18,7 @@ SYSTEM_PROMPT = """You are an AI assistant for an E-Waste Management platform. Y
 
 1. Questions about electronic waste disposal and recycling
 2. Information about device reuse, refurbishment, and donation
-3. Environmental impact of electronic devices cx
+3. Environmental impact of electronic devices
 4. Best practices for e-waste management
 5. How to use the platform features
 
@@ -52,7 +57,7 @@ def get_chatbot_response(user_message, conversation_history=None):
         return response.text
         
     except Exception as e:
-        print(f"Chatbot error: {e}")
+        logging.error(f"Chatbot error: {e}")
         return "I apologize, but I'm having trouble processing your request right now. Please try again or contact support if the issue persists."
 
 def get_quick_reply_suggestions(user_message):
