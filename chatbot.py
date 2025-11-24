@@ -3,10 +3,14 @@ import os
 
 # Configure Gemini API
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GEMINI_API_KEY != 'your_dummy_api_key_here':
     genai.configure(api_key=GEMINI_API_KEY)
 else:
-    print("Warning: GEMINI_API_KEY not set. Chatbot will return error messages.")
+    print("Warning: GEMINI_API_KEY not set or is a dummy value. Chatbot will return error messages.")
+    print("Please set GEMINI_API_KEY environment variable with a valid key. Example:")
+    print("  export GEMINI_API_KEY='your_real_api_key_here'  # Unix/macOS")
+    print("  set GEMINI_API_KEY='your_real_api_key_here'     # Windows CMD")
+    print("  $Env:GEMINI_API_KEY='your_real_api_key_here'    # PowerShell")
 
 # System prompt for e-waste assistant
 SYSTEM_PROMPT = """You are an AI assistant for an E-Waste Management platform. Your role is to help users with:
@@ -34,7 +38,7 @@ def get_chatbot_response(user_message, conversation_history=None):
     """
     try:
         # Initialize the model
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Build conversation context
         if conversation_history:

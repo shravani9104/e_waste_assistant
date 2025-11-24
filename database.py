@@ -13,7 +13,7 @@ class Database:
         """Initialize database with required tables"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         # Users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -24,10 +24,11 @@ class Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_login TIMESTAMP,
                 total_eco_score INTEGER DEFAULT 0,
-                devices_processed INTEGER DEFAULT 0
+                devices_processed INTEGER DEFAULT 0,
+                total_points INTEGER DEFAULT 0
             )
         ''')
-        
+
         # Device submissions table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS device_submissions (
@@ -41,10 +42,15 @@ class Database:
                 eco_score INTEGER,
                 environmental_impact TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                brand TEXT,
+                model TEXT,
+                estimated_value REAL DEFAULT 0,
+                points_awarded INTEGER DEFAULT 0,
+                valuation_reasoning TEXT,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
         ''')
-        
+
         # Feedback table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS feedback (
@@ -56,7 +62,7 @@ class Database:
                 status TEXT DEFAULT 'pending'
             )
         ''')
-        
+
         # Recycling centers table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS recycling_centers (
@@ -73,7 +79,7 @@ class Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        
+
         # User sessions table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_sessions (
@@ -85,13 +91,41 @@ class Database:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
         ''')
+
+        # User device images table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_device_images (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                device_submission_id INTEGER,
+                file_name TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                image_format TEXT,
+                device_type TEXT,
+                description TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (device_submission_id) REFERENCES device_submissions(id)
+            )
+        ''')
         
+        # Create reward_history table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS reward_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                submission_id INTEGER,
+                points INTEGER,
+                action_type TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (submission_id) REFERENCES device_submissions(id)
+            )
+        ''')
+
         conn.commit()
         conn.close()
-        
-        # Insert default recycling centers
-        self.insert_default_recycling_centers()
-    
+
     def insert_default_recycling_centers(self):
         """Insert default recycling centers"""
         centers = [
@@ -145,7 +179,7 @@ class Database:
         
         conn.commit()
         conn.close()
-    
+
     def create_user(self, email, password, name=None):
         """Create a new user"""
         conn = sqlite3.connect(self.db_path)
@@ -166,7 +200,7 @@ class Database:
             return None  # Email already exists
         finally:
             conn.close()
-    
+
     def authenticate_user(self, email, password):
         """Authenticate user login"""
         conn = sqlite3.connect(self.db_path)
@@ -189,7 +223,7 @@ class Database:
                 'devices_processed': user[4]
             }
         return None
-    
+
     def update_user_login(self, user_id):
         """Update last login timestamp"""
         conn = sqlite3.connect(self.db_path)
@@ -201,56 +235,74 @@ class Database:
         
         conn.commit()
         conn.close()
-    
-    def add_device_submission(self, user_id, device_type, device_age, condition, damage, action_taken, eco_score, environmental_impact):
-        """Add a new device submission"""
+    def add_device_submission(self, user_id, device_type, device_age, condition, damage, 
+                         action_taken, eco_score, environmental_impact,
+                         brand=None, model=None, estimated_value=0, points_awarded=0, 
+                         valuation_reasoning=None):
+        """Add a new device submission with pricing"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+    
         cursor.execute('''
-            INSERT INTO device_submissions 
-            (user_id, device_type, device_age, condition, damage, action_taken, eco_score, environmental_impact)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (user_id, device_type, device_age, condition, damage, action_taken, eco_score, environmental_impact))
-        
-        # Update user stats
+           INSERT INTO device_submissions 
+        (user_id, device_type, device_age, condition, damage, action_taken, 
+         eco_score, environmental_impact, brand, model, estimated_value, 
+         points_awarded, valuation_reasoning)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, device_type, device_age, condition, damage, action_taken, 
+          eco_score, environmental_impact, brand, model, estimated_value, 
+          points_awarded, valuation_reasoning))
+    
+        submission_id = cursor.lastrowid
+    
+    # Update user stats
         cursor.execute('''
-            UPDATE users 
-            SET total_eco_score = total_eco_score + ?, 
-                devices_processed = devices_processed + 1
-            WHERE id = ?
-        ''', (eco_score, user_id))
-        
+        UPDATE users 
+        SET total_eco_score = total_eco_score + ?, 
+            devices_processed = devices_processed + 1,
+            total_points = total_points + ?
+        WHERE id = ?
+    ''', (eco_score, points_awarded, user_id))
+    
+    # Add to reward history
+        if points_awarded > 0:
+            cursor.execute('''
+            INSERT INTO reward_history (user_id, submission_id, points, action_type)
+            VALUES (?, ?, ?, 'device_submission')
+        ''', (user_id, submission_id, points_awarded))
+    
         conn.commit()
         conn.close()
     
+        return submission_id  
+    # Returns the ID of the submission
     def get_user_submissions(self, user_id):
         """Get all submissions for a user"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+    
         cursor.execute('''
-            SELECT device_type, device_age, condition, damage, action_taken, 
-                   eco_score, environmental_impact, created_at
-            FROM device_submissions 
-            WHERE user_id = ? 
-            ORDER BY created_at DESC
+        SELECT device_type, device_age, condition, damage, action_taken, 
+               eco_score, environmental_impact, created_at
+        FROM device_submissions 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC
         ''', (user_id,))
-        
+    
         submissions = cursor.fetchall()
         conn.close()
-        
-        return [{
-            'device_type': sub[0],
-            'device_age': sub[1],
-            'condition': sub[2],
-            'damage': sub[3],
-            'action_taken': sub[4],
-            'eco_score': sub[5],
-            'environmental_impact': sub[6],
-            'created_at': sub[7]
-        } for sub in submissions]
     
+        return [{
+        'device_type': sub[0],
+        'device_age': sub[1],
+        'condition': sub[2],
+        'damage': sub[3],
+        'action_taken': sub[4],
+        'eco_score': sub[5],
+        'environmental_impact': sub[6],
+        'created_at': sub[7]
+    } for sub in submissions]
+   
     def get_user_stats(self, user_id):
         """Get user statistics"""
         conn = sqlite3.connect(self.db_path)
@@ -270,7 +322,7 @@ class Database:
                 'devices_processed': stats[1]
             }
         return None
-    
+
     def get_recycling_centers(self):
         """Get all active recycling centers"""
         conn = sqlite3.connect(self.db_path)
@@ -296,7 +348,7 @@ class Database:
             'description': center[6],
             'icon': center[7]
         } for center in centers]
-    
+
     def add_feedback(self, name, email, comments):
         """Add user feedback"""
         conn = sqlite3.connect(self.db_path)
@@ -309,7 +361,7 @@ class Database:
         
         conn.commit()
         conn.close()
-    
+
     def get_all_feedback(self):
         """Get all feedback for admin panel"""
         conn = sqlite3.connect(self.db_path)
@@ -332,7 +384,7 @@ class Database:
             'created_at': fb[4],
             'status': fb[5]
         } for fb in feedback]
-    
+
     def update_feedback_status(self, feedback_id, status):
         """Update feedback status"""
         conn = sqlite3.connect(self.db_path)
@@ -344,3 +396,95 @@ class Database:
         
         conn.commit()
         conn.close()
+
+    def add_device_image(self, user_id, file_name, file_path, device_submission_id=None, image_format=None, device_type=None, description=None):
+        """Add a new device image record"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            INSERT INTO user_device_images (user_id, device_submission_id, file_name, file_path, image_format, device_type, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, device_submission_id, file_name, file_path, image_format, device_type, description))
+
+        conn.commit()
+        conn.close()
+
+    def get_images_by_user(self, user_id):
+        """Retrieve all images for a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT id, device_submission_id, file_name, file_path, upload_time, image_format, device_type, description
+            FROM user_device_images
+            WHERE user_id = ?
+            ORDER BY upload_time DESC
+        ''', (user_id,))
+
+        images = cursor.fetchall()
+        conn.close()
+
+        return [{
+            'id': img[0],
+            'device_submission_id': img[1],
+            'file_name': img[2],
+            'file_path': img[3],
+            'upload_time': img[4],
+            'image_format': img[5],
+            'device_type': img[6],
+            'description': img[7]
+        } for img in images]
+
+    def get_images_by_submission(self, device_submission_id):
+        """Retrieve all images for a device submission"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT id, user_id, file_name, file_path, upload_time, image_format, device_type, description
+            FROM user_device_images
+            WHERE device_submission_id = ?
+            ORDER BY upload_time DESC
+        ''', (device_submission_id,))
+
+        images = cursor.fetchall()
+        conn.close()
+
+        return [{
+            'id': img[0],
+            'user_id': img[1],
+            'file_name': img[2],
+            'file_path': img[3],
+            'upload_time': img[4],
+            'image_format': img[5],
+            'device_type': img[6],
+            'description': img[7]
+        } for img in images]
+    
+    def get_user_reward_summary(self, user_id):
+            """Get user's reward summary"""
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Get total points and submissions with rewards
+            cursor.execute('''
+                SELECT 
+                    u.total_points,
+                    COUNT(ds.id) as total_submissions,
+                    SUM(ds.estimated_value) as total_value,
+                    SUM(ds.points_awarded) as total_points_earned
+                FROM users u
+                LEFT JOIN device_submissions ds ON u.id = ds.user_id
+                WHERE u.id = ?
+            ''', (user_id,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            return {
+                'total_points': result[0] or 0,
+                'total_submissions': result[1] or 0,
+                'total_value_earned': result[2] or 0,
+                'total_points_earned': result[3] or 0
+            }
