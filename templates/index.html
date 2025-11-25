@@ -31,9 +31,9 @@
                         <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Dashboard</a>
                         <a href="{{ url_for('map_view') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Map</a>
                         <a href="{{ url_for('upload') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-md">Upload Device</a>
-                        {% if session.get('email') == 'admin@ewasteassistant.com' %}
+                        <a href="{{ url_for('chatbot_page') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">💬 Chat Assistant</a>    {% if session.get('email') == 'admin@ewasteassistant.com' %}
                             <a href="{{ url_for('admin_panel') }}" class="text-gray-700 hover:text-red-600 transition-colors font-medium">Admin</a>
-                        {% endif %}
+                    {% endif %}
                         <a href="{{ url_for('signout') }}" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Sign Out</a>
                     {% endif %}
                 </div>
@@ -42,30 +42,33 @@
     </nav>
 
     <main class="flex-1">
+       
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="fixed top-20 right-4 z-50 space-y-2">
                     {% for category, message in messages %}
-                        <div class="bg-white border-l-4 {% if category == 'error' %}border-red-500{% elif category == 'success' %}border-green-500{% else %}border-blue-500{% endif %} p-4 rounded-lg shadow-lg max-w-sm">
+                        <div class="bg-white border-l-4 {% if category == 'error' %}border-red-500{% else %}{% if category == 'success' %}border-green-500{% else %}border-blue-500{% endif %}{% endif %} p-4 rounded-lg shadow-lg max-w-sm">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     {% if category == 'error' %}
                                         <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                                         </svg>
-                                    {% elif category == 'success' %}
-                                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                        </svg>
                                     {% else %}
-                                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                        </svg>
+                                        {% if category == 'success' %}
+                                            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        {% else %}
+                                            <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm font-medium {% if category == 'error' %}text-red-800{% elif category == 'success' %}text-green-800{% else %}text-blue-800{% endif %}">
+                                    <p class="text-sm font-medium {% if category == 'error' %}text-red-800{% else %}{% if category == 'success' %}text-green-800{% else %}text-blue-800{% endif %}{% endif %}">
                                         {{ message }}
                                     </p>
                                 </div>
@@ -75,8 +78,9 @@
                 </div>
             {% endif %}
         {% endwith %}
-        
+
         {% if page == 'home' %}
+
         <!-- Hero Carousel Section -->
         <section class="relative min-h-screen overflow-hidden">
             <!-- Carousel Container -->
@@ -236,6 +240,7 @@
                 </div>
             </div>
         </section>
+        
         <section class="py-24 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
             <!-- Background decorative elements -->
             <div class="absolute top-20 left-10 w-32 h-32 bg-green-100 rounded-full opacity-20 animate-pulse"></div>
@@ -419,7 +424,7 @@
                 </div>
             </div>
         </section>
-        {% elif page == 'about' %}
+        {% if page == 'about' %}
         <section class="py-20 bg-green-50">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -440,7 +445,9 @@
                 </div>
             </div>
         </section>
-        {% elif page == 'contact' %}
+    {% endif %}
+
+        {% if page == 'contact' %}
         <section class="py-20 bg-white">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -480,8 +487,10 @@
                     </div>
                 </div>
             </div>
-        </section>
-        {% elif page == 'help' %}
+         </section>
+        {% endif %}
+
+        {% if page == 'help' %}
         <section class="container mx-auto py-16 px-6">
             <h1 class="text-5xl font-bold text-emerald-700 text-center mb-12">Help & Support</h1>
             <div class="bg-white p-8 rounded-2xl shadow-lg max-w-3xl mx-auto">
@@ -509,7 +518,10 @@
                 </form>
             </div>
         </section>
-        {% elif page == 'signin' %}
+
+        {% endif %}
+
+        {% if page == 'signin' %}
         <div class="flex items-center justify-center min-h-[70vh]">
             <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
                 <h1 class="text-3xl font-bold text-emerald-700 mb-6 text-center">Sign In</h1>
@@ -527,7 +539,9 @@
                 </form>
             </div>
         </div>
-        {% elif page == 'signup' %}
+        {% endif %}
+
+        {% if page == 'signup' %}
         <div class="flex items-center justify-center min-h-[70vh]">
             <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
                 <h1 class="text-3xl font-bold text-emerald-700 mb-6 text-center">Sign Up</h1>
@@ -548,7 +562,9 @@
                 </form>
             </div>
         </div>
-        {% elif page == 'upload' %}
+        {% endif %}
+
+        {% if page == 'upload' %}
         <div class="py-24 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white rounded-3xl shadow-2xl p-12 border border-gray-100">
@@ -598,7 +614,10 @@
                 </div>
             </div>
         </div>
-        {% elif page == 'questions' %}
+
+        {% endif %}
+
+        {% if page == 'questions' %}
         <div class="py-24 bg-gradient-to-br from-blue-50 via-green-50 to-emerald-50 min-h-screen">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white rounded-3xl shadow-2xl p-12 border border-gray-100">
@@ -612,21 +631,37 @@
                         <p class="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">Please answer the following questions for better analysis</p>
                     </div>
                     <form method="post" action="{{ url_for('recommendations') }}" class="space-y-6">
-                        {% for q in questions %}
-                            <div>
-                                <label class="block text-sm font-medium text-green-700 mb-2">{{ q }}</label>
-                                <input name="q{{ loop.index0 }}" class="w-full p-3 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                        {% endfor %}
-                        <input type="hidden" name="device_type" value="{{ device_type }}">
-                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-lg">
-                            🌱 Get Recommendations
-                        </button>
-                    </form>
+        {% for q in questions %}
+        <div>
+            <label class="block text-sm font-medium text-green-700 mb-2">{{ q }}</label>
+            <input name="q{{ loop.index0 }}" class="w-full p-3 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+        </div>
+        
+    
+    <!-- 🆕 ADD BRAND AND MODEL FIELDS -->
+    <div>
+        <label class="block text-sm font-medium text-green-700 mb-2">Brand (Optional)</label>
+        <input name="brand" type="text" placeholder="e.g., Samsung, Apple, HP, Dell" class="w-full p-3 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+        <p class="text-xs text-gray-500 mt-1">Helps us give better price estimates</p>
+    </div>
+    
+    <div>
+        <label class="block text-sm font-medium text-green-700 mb-2">Model (Optional)</label>
+        <input name="model" type="text" placeholder="e.g., Galaxy S10, iPhone 12, Pavilion 15" class="w-full p-3 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+        <p class="text-xs text-gray-500 mt-1">Specific model number or name</p>
+    </div>
+    
+    <input type="hidden" name="device_type" value="{{ device_type }}">
+    
+    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-lg">
+        💰 Get Recommendations & Price Estimate
+    </button>
+</form>
                 </div>
             </div>
         </div>
-        {% elif page == 'recommendations' %}
+        {% endif %}
+        {% if page == 'recommendations' %}
         <div class="py-24 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white rounded-3xl shadow-2xl p-12 text-center border border-gray-100">
@@ -637,6 +672,57 @@
                             </svg>
                         </div>
                         <h1 class="text-4xl font-bold text-green-800 mb-6">♻️ Action: {{ action }}</h1>
+                        
+                        <!-- 🆕 REWARD CARD - ADD THIS NEW SECTION -->
+                        {% if points_awarded and points_awarded > 0 %}
+                        <div class="bg-gradient-to-r from-purple-500 via-indigo-600 to-blue-600 p-8 rounded-3xl shadow-2xl mb-8 text-white transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center justify-center mb-6">
+                                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mr-4 backdrop-blur-sm">
+                                    <span class="text-4xl">💰</span>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="text-3xl font-bold">Your Reward Estimate</h3>
+                                    <p class="text-purple-100 text-sm">For recycling your {{ device_type }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 border border-white border-opacity-20">
+                                    <div class="text-5xl font-bold mb-2">₹{{ estimated_value }}</div>
+                                    <div class="text-purple-100 text-lg font-semibold">Estimated Cash Value</div>
+                                    <div class="text-purple-200 text-sm mt-2">Based on current market rates</div>
+                                </div>
+                                <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 border border-white border-opacity-20">
+                                    <div class="text-5xl font-bold mb-2">{{ points_awarded }}</div>
+                                    <div class="text-purple-100 text-lg font-semibold">Reward Points</div>
+                                    <div class="text-purple-200 text-sm mt-2">1 Point = ₹1 Value</div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 border border-white border-opacity-20 text-left">
+                                <div class="flex items-start">
+                                    <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold mb-2 text-yellow-100">💡 How We Calculated This:</p>
+                                        <p class="text-sm text-purple-100 leading-relaxed">{{ valuation_reasoning }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 bg-yellow-400 bg-opacity-20 border border-yellow-300 border-opacity-30 rounded-xl p-4">
+                                <p class="text-sm text-yellow-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Visit a recycling center below to claim your reward!
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <!-- Eco Score Display -->
                         <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border-2 border-green-200 shadow-lg mb-8">
@@ -690,7 +776,13 @@
                     <div class="mt-16">
                         <div class="text-center mb-12">
                             <h2 class="text-3xl md:text-4xl font-bold text-green-800 mb-4">🌱 Next Steps: Find a Recycling Center</h2>
-                            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">Choose from our verified recycling partners in your area</p>
+                            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                                {% if points_awarded and points_awarded > 0 %}
+                                Visit these centers to recycle your {{ device_type }} and claim your ₹{{ estimated_value }} reward!
+                                {% else %}
+                                Choose from our verified recycling partners in your area
+                                {% endif %}
+                            </p>
                         </div>
                         
                         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -748,14 +840,14 @@
                                         </div>
                                         <div class="flex-1">
                                             <span class="font-semibold text-gray-800 text-sm">Website</span>
-                                            <a href="{{ center.website }}" target="_blank" class="text-blue-600 hover:underline text-sm mt-1 block break-all">{{ center.website }}</a>
+<a href="{{ center.website }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline text-sm mt-1 block break-all">{{ center.website }}</a>
                                         </div>
                                     </div>
                                     {% endif %}
                                 </div>
                                 
                                 <div class="pt-6 mt-6 border-t border-gray-200">
-                                    <a href="{{ center.map }}" target="_blank" class="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl">
+<a href="{{ center.map_url }}" target="_blank" rel="noopener noreferrer" class="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -776,7 +868,13 @@
                                 </div>
                                 <h3 class="text-xl font-bold text-blue-800">💡 Pro Tip</h3>
                             </div>
-                            <p class="text-blue-700 text-lg leading-relaxed">Call ahead to confirm operating hours and accepted items. Some centers may offer pickup services for larger quantities!</p>
+                            <p class="text-blue-700 text-lg leading-relaxed">
+                                {% if points_awarded and points_awarded > 0 %}
+                                Call ahead to confirm they accept your {{ device_type }} and ask about the reward collection process. Bring a valid ID when claiming your ₹{{ estimated_value }} reward!
+                                {% else %}
+                                Call ahead to confirm operating hours and accepted items. Some centers may offer pickup services for larger quantities!
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     {% endif %}
@@ -790,15 +888,16 @@
                         </a>
                         <a href="{{ url_for('home') }}" class="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
                             <svg class="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                        Back to Home
-                    </a>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            Back to Home
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-        {% elif page == 'dashboard' %}
+{% endif %}
+{% if page == 'dashboard' %}
         <div class="py-24 bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -861,7 +960,8 @@
                         {% endfor %}
                     </div>
                 </div>
-                {% else %}
+                {% endif %}
+                {% if not user_data %}
                 <div class="bg-white rounded-3xl shadow-xl p-12 border border-gray-100 text-center">
                     <div class="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -898,7 +998,8 @@
                 </div>
             </div>
         </div>
-        {% elif page == 'map' %}
+        {% endif %}
+        {% if page == 'map' %}
         <div class="py-24 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -938,7 +1039,7 @@
                                 </div>
                             </div>
                             <p class="text-gray-700 text-sm mb-4">091566 06777</p>
-                            <a href="https://share.google/CmjAHToqKRV10PtUR" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+<a href="https://share.google/CmjAHToqKRV10PtUR" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -958,7 +1059,7 @@
                                 </div>
                             </div>
                             <p class="text-gray-700 text-sm mb-4">08554930666</p>
-                            <a href="https://share.google/vGV19xKr0l2ylZvsq" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+<a href="https://share.google/vGV19xKr0l2ylZvsq" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -978,7 +1079,7 @@
                                 </div>
                             </div>
                             <p class="text-gray-700 text-sm mb-4">094222 22570</p>
-                            <a href="https://share.google/hIDPijZmfuUBGm8mX" target="_blank" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+<a href="https://share.google/hIDPijZmfuUBGm8mX" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -998,7 +1099,7 @@
                                 </div>
                             </div>
                             <p class="text-gray-700 text-sm mb-4">098222 59601</p>
-                            <a href="https://share.google/7vUxpSD8yNxEIZxaa" target="_blank" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm">
+<a href="https://share.google/7vUxpSD8yNxEIZxaa" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -1028,7 +1129,373 @@
                 </div>
             </div>
         </div>
-        {% elif page == 'admin' %}
+        {% endif %}
+
+        {% if page == 'chatbot' %}
+     <!-- Chatbot Page -->
+     <section class="min-h-screen flex items-center justify-center p-4 py-24" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+       <div class="chat-container w-full max-w-5xl bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden" style="height: 700px;">
+        <!-- Chat Header -->
+        <div class="chat-header bg-gradient-to-r from-green-600 to-emerald-700 text-white p-6 flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold flex items-center gap-3">
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                        E-Waste Assistant Bot
+                    </h2>
+                    <p class="text-green-100 text-sm">Ask me anything about e-waste recycling</p>
+                </div>
+            </div>
+            <button onclick="clearChat()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-2 rounded-xl transition-all duration-300 font-medium">
+                Clear Chat
+            </button>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-gray-50 to-green-50 space-y-4">
+            <div class="welcome-message text-center py-16">
+                <div class="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                    </svg>
+                </div>
+                <h3 class="text-3xl font-bold text-green-600 mb-4">👋 Welcome to E-Waste Assistant!</h3>
+                <p class="text-gray-600 text-lg max-w-2xl mx-auto">Ask me anything about electronic waste disposal, recycling, device management, or environmental impact. I'm here to help you make eco-friendly choices!</p>
+                <div class="mt-8 flex flex-wrap gap-3 justify-center">
+                    <button onclick="sendSuggestion('How do I recycle my old phone?')" class="bg-green-100 text-green-700 px-4 py-2 rounded-full hover:bg-green-200 transition-colors text-sm font-medium">
+                        📱 Recycle old phone
+                    </button>
+                    <button onclick="sendSuggestion('What happens to e-waste?')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded-full hover:bg-blue-200 transition-colors text-sm font-medium">
+                        🌍 E-waste impact
+                    </button>
+                    <button onclick="sendSuggestion('Where can I donate electronics?')" class="bg-purple-100 text-purple-700 px-4 py-2 rounded-full hover:bg-purple-200 transition-colors text-sm font-medium">
+                        💝 Donate electronics
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div id="suggestions" class="px-6 py-3 flex flex-wrap gap-2 border-t border-gray-200 bg-white"></div>
+
+        <!-- Chat Input -->
+        <div class="p-6 bg-white border-t-2 border-gray-200">
+            <div class="flex gap-3 items-center">
+                <input 
+                    type="text" 
+                    id="chatInput" 
+                    class="flex-1 px-5 py-4 border-2 border-gray-300 rounded-2xl focus:border-green-500 focus:outline-none transition-colors text-base"
+                    placeholder="Type your message about e-waste..."
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button 
+                    id="sendBtn"
+                    onclick="sendMessage()" 
+                    class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .message {
+        display: flex;
+        margin-bottom: 1.25rem;
+        animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.user {
+        justify-content: flex-end;
+    }
+
+    .message-content {
+        max-width: 75%;
+        padding: 1rem 1.25rem;
+        border-radius: 1.5rem;
+        word-wrap: break-word;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    .message.user .message-content {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-bottom-right-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .message.bot .message-content {
+        background: white;
+        color: #1e293b;
+        border-bottom-left-radius: 0.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #e5e7eb;
+    }
+
+    .suggestion-chip {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #16a34a;
+        padding: 0.625rem 1.25rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #86efac;
+    }
+
+    .suggestion-chip:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+
+    .typing-indicator {
+        display: none;
+        padding: 1rem 1.25rem;
+        background: white;
+        border-radius: 1.5rem;
+        width: fit-content;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #e5e7eb;
+    }
+
+    .typing-indicator.active {
+        display: block;
+    }
+
+    .typing-indicator span {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        background: #10b981;
+        border-radius: 50%;
+        margin: 0 3px;
+        animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-10px); }
+    }
+
+    #chatMessages::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #chatMessages::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    #chatMessages::-webkit-scrollbar-thumb {
+        background: #10b981;
+        border-radius: 10px;
+    }
+
+    #chatMessages::-webkit-scrollbar-thumb:hover {
+        background: #059669;
+    }
+</style>
+
+<script>
+    let conversationHistory = [];
+
+    function addMessage(content, isUser = false) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+        if (welcomeMsg) {
+            welcomeMsg.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = content;
+        
+        messageDiv.appendChild(contentDiv);
+        messagesContainer.appendChild(messageDiv);
+        
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        conversationHistory.push({
+            role: isUser ? 'user' : 'assistant',
+            content: content
+        });
+    }
+
+    function showTypingIndicator() {
+        const messagesContainer = document.getElementById('chatMessages');
+        const indicator = document.createElement('div');
+        indicator.className = 'message bot';
+        indicator.innerHTML = `
+            <div class="typing-indicator active">
+                <span></span><span></span><span></span>
+            </div>
+        `;
+        indicator.id = 'typingIndicator';
+        messagesContainer.appendChild(indicator);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    function updateSuggestions(suggestions) {
+        const suggestionsContainer = document.getElementById('suggestions');
+        suggestionsContainer.innerHTML = '';
+        
+        if (suggestions && suggestions.length > 0) {
+            suggestions.forEach(suggestion => {
+                const chip = document.createElement('button');
+                chip.className = 'suggestion-chip';
+                chip.textContent = suggestion;
+                chip.onclick = () => sendSuggestion(suggestion);
+                suggestionsContainer.appendChild(chip);
+            });
+        }
+    }
+
+    function sendSuggestion(text) {
+        document.getElementById('chatInput').value = text;
+        sendMessage();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        addMessage(message, true);
+        input.value = '';
+
+        showTypingIndicator();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    history: conversationHistory
+                })
+            });
+
+            const data = await response.json();
+
+            hideTypingIndicator();
+
+            if (response.ok) {
+                addMessage(data.response, false);
+                updateSuggestions(data.suggestions || []);
+            } else {
+                addMessage('Sorry, I encountered an error. Please try again.', false);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            hideTypingIndicator();
+            addMessage('Sorry, I could not connect to the server. Please try again later.', false);
+        } finally {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    async function clearChat() {
+        if (!confirm('Are you sure you want to clear the chat history?')) {
+            return;
+        }
+
+        conversationHistory = [];
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = `
+            <div class="welcome-message text-center py-16">
+                <div class="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                    </svg>
+                </div>
+                <h3 class="text-3xl font-bold text-green-600 mb-4">👋 Welcome to E-Waste Assistant!</h3>
+                <p class="text-gray-600 text-lg max-w-2xl mx-auto">Ask me anything about electronic waste disposal, recycling, device management, or environmental impact.</p>
+                <div class="mt-8 flex flex-wrap gap-3 justify-center">
+                    <button onclick="sendSuggestion('How do I recycle my old phone?')" class="bg-green-100 text-green-700 px-4 py-2 rounded-full hover:bg-green-200 transition-colors text-sm font-medium">
+                        📱 Recycle old phone
+                    </button>
+                    <button onclick="sendSuggestion('What happens to e-waste?')" class="bg-blue-100 text-blue-700 px-4 py-2 rounded-full hover:bg-blue-200 transition-colors text-sm font-medium">
+                        🌍 E-waste impact
+                    </button>
+                    <button onclick="sendSuggestion('Where can I donate electronics?')" class="bg-purple-100 text-purple-700 px-4 py-2 rounded-full hover:bg-purple-200 transition-colors text-sm font-medium">
+                        💝 Donate electronics
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('suggestions').innerHTML = '';
+
+        try {
+            await fetch('/api/chat/clear', { method: 'POST' });
+        } catch (error) {
+            console.error('Error clearing chat:', error);
+        }
+    }
+
+    // Focus input on page load
+    if (document.getElementById('chatInput')) {
+        document.getElementById('chatInput').focus();
+    }
+</script>
+        {% endif %}
+        {% if page == 'admin' %}
         <div class="py-24 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -1051,8 +1518,7 @@
                                     <p class="text-sm text-gray-500">{{ feedback.created_at }}</p>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <span class="px-3 py-1 rounded-full text-sm font-medium {% if feedback.status == 'pending' %}bg-yellow-100 text-yellow-800{% elif feedback.status == 'resolved' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                                        {{ feedback.status.title() }}
+                                    <span class="px-3 py-1 rounded-full text-sm font-medium {% if feedback.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}{% if feedback.status == 'resolved' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}{% endif %}">    {{ feedback.status.title() }}
                                     </span>
                                 </div>
                             </div>
@@ -1068,9 +1534,10 @@
                                 </a>
                             </div>
                         </div>
-                        {% endfor %}
+                        
                     </div>
-                    {% else %}
+                    {% endif %}
+                    {% if not feedbacks %}
                     <div class="text-center py-12">
                         <div class="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1094,6 +1561,7 @@
                 </div>
             </div>
         </div>
+
         {% endif %}
     </main>
 

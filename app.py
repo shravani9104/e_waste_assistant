@@ -5,10 +5,12 @@ from database import Database
 from werkzeug.utils import secure_filename
 import os
 from functools import wraps
-
+from chatbot import get_chatbot_response, get_quick_reply_suggestions
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', '20f8fbd893abb98ecbe656fc7cf31bb0c049d3b5716480f7481eaa052d269bb0')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize database
@@ -123,9 +125,9 @@ def upload():
         return render_template('index.html', page='questions', questions=questions, device_type=final_device_type)
     return render_template('index.html', page='upload')
 
-@app.route('/recommendations', methods=['POST'])
+@app.route('/recommendations', methods=['GET','POST'])
 @login_required
-def recommendations():
+def recommendations_view():
     device_type = request.form['device_type']
     try:
         age = int(request.form['q0'])
@@ -133,6 +135,11 @@ def recommendations():
         age = 0  # Default or error handle
     condition = request.form['q1']
     damage = request.form['q2']
+    
+    # Get brand and model if provided (optional fields)
+    brand = request.form.get('brand', '')
+    model = request.form.get('model', '')
+    
     action = decide_action(device_type, age, condition, damage)
     rec = get_recommendations(action)
     eco_score = get_eco_score(action, device_type, age, condition)
@@ -140,14 +147,58 @@ def recommendations():
     educational_tips = get_educational_tips(device_type)
     recycling_centers = db.get_recycling_centers() if action == 'Safe Disposal' else []
     
-    # Store submission in database
+    # 🆕 ADD GEMINI PRICE ESTIMATION HERE
+    try:
+        from gemini_service import GeminiEwasteValuation
+        from config import Config
+        
+        # Initialize Gemini
+        gemini = GeminiEwasteValuation(Config.GEMINI_API_KEY)
+        
+        # Prepare device data for valuation
+        device_data = {
+            'device_type': device_type,
+            'brand': brand,
+            'model': model,
+            'device_age': age,
+            'condition': condition,
+            'damage': damage
+        }
+        
+        # Get estimation from Gemini
+        print("🤖 Getting price estimation from Gemini...")
+        estimation = gemini.estimate_value(device_data)
+        
+        estimated_value = estimation['estimated_value']
+        points_awarded = estimation['points']
+        valuation_reasoning = estimation['reasoning']
+        
+        print(f"✅ Estimation: ₹{estimated_value}, Points: {points_awarded}")
+        
+    except Exception as e:
+        print(f"⚠️ Gemini estimation failed: {e}")
+        # Fallback values if Gemini fails
+        estimated_value = 0
+        points_awarded = 0
+        valuation_reasoning = "Estimation unavailable"
+    
+    # Store submission in database WITH pricing
     user_id = session['user_id']
-    db.add_device_submission(
+    submission_id = db.add_device_submission(
         user_id, device_type, age, condition, damage, 
-        action, eco_score, environmental_impact
+        action, eco_score, environmental_impact,
+        brand=brand,
+        model=model,
+        estimated_value=estimated_value,
+        points_awarded=points_awarded,
+        valuation_reasoning=valuation_reasoning
     )
     
-    flash(f'Great! You earned {eco_score} eco points for {action.lower()} your {device_type.lower()}!', 'success')
+    # Update flash message to include rewards
+    if points_awarded > 0:
+        flash(f'🎉 Great! You earned {eco_score} eco points and ₹{estimated_value} ({points_awarded} reward points) for {action.lower()} your {device_type.lower()}!', 'success')
+    else:
+        flash(f'Great! You earned {eco_score} eco points for {action.lower()} your {device_type.lower()}!', 'success')
     
     return render_template('index.html', 
                          page='recommendations', 
@@ -157,29 +208,11 @@ def recommendations():
                          eco_score=eco_score,
                          environmental_impact=environmental_impact,
                          educational_tips=educational_tips,
-                         device_type=device_type)
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    user_id = session['user_id']
-    user_submissions = db.get_user_submissions(user_id)
-    user_stats = db.get_user_stats(user_id)
-    
-    # Calculate statistics
-    device_counts = {}
-    action_counts = {}
-    for submission in user_submissions:
-        device_counts[submission['device_type']] = device_counts.get(submission['device_type'], 0) + 1
-        action_counts[submission['action_taken']] = action_counts.get(submission['action_taken'], 0) + 1
-    
-    return render_template('index.html', 
-                         page='dashboard',
-                         user_data=user_submissions,
-                         total_eco_score=user_stats['total_eco_score'],
-                         total_devices=user_stats['devices_processed'],
-                         device_counts=device_counts,
-                         action_counts=action_counts)
+                         device_type=device_type,
+                         # 🆕 Pass pricing info to template
+                         estimated_value=estimated_value,
+                         points_awarded=points_awarded,
+                         valuation_reasoning=valuation_reasoning)
 
 @app.route('/admin')
 @admin_required
@@ -205,6 +238,40 @@ def api_recycling_centers():
 def map_view():
     """Map view for recycling centers"""
     return render_template('index.html', page='map')
+
+@app.route('/chatbot')
+def chatbot_page():
+    """Render the chatbot page"""
+    return render_template('chatbot_page.html')
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """API endpoint for chatbot"""
+    data = request.get_json()
+    user_message = data.get('message', '')
+    conversation_history = data.get('history', [])
+    
+    if not user_message.strip():
+        return jsonify({'error': 'Message cannot be empty'}), 400
+    
+    # Get response from chatbot
+    bot_response = get_chatbot_response(user_message, conversation_history)
+    
+    # Get quick reply suggestions
+    suggestions = get_quick_reply_suggestions(user_message)
+    
+    return jsonify({
+        'response': bot_response,
+        'suggestions': suggestions
+    })
+
+@app.route('/api/chat/clear', methods=['POST'])
+def clear_chat():
+    """Clear chat history"""
+    if 'chat_history' in session:
+        session.pop('chat_history')
+    return jsonify({'success': True, 'message': 'Chat history cleared'})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
